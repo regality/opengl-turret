@@ -11,14 +11,18 @@ Rocket::Rocket(float xa, float ya, float xp, float yp) {
    xPos = xp;
    yPos = yp;
    dist = 0;
-   speed = 25;
+   speed = 1;
 }
 
 void Rocket::draw() {
    Pyramid p;
    Cylinder c;
    dist += speed;
-   speed += 0.1;
+   if (speed < 25) {
+      speed *= 2.0;
+   } else {
+      speed += 0.3;
+   }
 
    glPushMatrix();
       glRotatef(yAngle, 0.0, 1.0, 0.0);
@@ -33,15 +37,14 @@ void Rocket::draw() {
       glPopMatrix();
 
       glPushMatrix();
-         glScalef(0.7,1.3,0.7);
-         p.draw();
-      glPopMatrix();
-
-      glPushMatrix();
-         glScalef(0.5, 7, 0.5);
+         glScalef(0.49, 7, 0.49);
          c.draw();
       glPopMatrix();
    glPopMatrix();
+}
+
+float Rocket::getSpeed() {
+   return speed;
 }
 
 float Rocket::getDist() {

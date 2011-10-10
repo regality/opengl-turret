@@ -15,21 +15,20 @@ void keyboardUp(unsigned char key, int x, int y);
 void specialKey(int key, int x, int y);
 void specialKeyUp(int key, int x, int y);
 
-const int MAX_ENEMY = 20;
-const int MAX_ROCKET = 100;
-const int MAX_BUILDING = 20;
-int rocketCount = 0;
+const int MAX_ENEMY = 20; // number of planes
+const int MAX_ROCKET = 100; // number of rockets
+const int MAX_BUILDING = 20; // number of buildings
 
 int SPEED = 20000;  // Frame rate, smaller is faster
 const double MOVE_SPEED = 1.0; // camera rotate speed
 double viewAngle[3] = { 0.0, 0.0, 0.0 }; // camera angle
 bool keys[256];
 bool specKeys[256];
-bool fireRocket = true;
-bool rocketLeft = true;
-int gameBegin;
+bool rocketLeft = true; // use left barrel
+int gameBegin; // use to time game
 int gameEnd;
 
+// This should prolly be moved to objects directory
 struct Building {
    float posx;
    float posz;
@@ -48,6 +47,10 @@ Rocket ** missile;
 Plane ** enemy;
 Building ** building;
 
+/*******************************
+ * Create a bunch of planes at *
+ * random places in the sky.   *
+ *******************************/
 void createBadGuys() {
    for (int i = 0; i < MAX_ENEMY; ++i) {
       int x = rand() % 200;
@@ -65,10 +68,14 @@ void createBadGuys() {
  * beginning of the program
  *****************************/
 void setup() {
-   srand(time(0));
+   srand(time(0)); // seed psrng
+
+   // create dynamic arrays
    missile = new Rocket*[MAX_ROCKET];
    enemy = new Plane*[MAX_ENEMY];
    building = new Building*[MAX_BUILDING];
+
+   // put buildings in random places
    for (int i = 0; i < MAX_BUILDING; ++i) {
       building[i] = new Building;
       building[i]->posx = rand() % 200;
@@ -78,9 +85,13 @@ void setup() {
       if (rand() % 2) building[i]->posx *= -1;
       if (rand() % 2) building[i]->posz *= -1;
    }
+
+   // set rocket pointers to null
    for (int i = 0; i < MAX_ROCKET; ++i) {
       missile[i] = NULL;
    }
+
+   // need something to shoot at
    createBadGuys();
 }
 
@@ -89,22 +100,28 @@ void setup() {
  * end of the program
  *****************************/
 void cleanup() {
+   // we should delete all of our memory...
 }
 
+/*
+ * Launch a rocket.
+ */
 void fire() {
    int xPos = 3;
    int index = -1;
    for (int i = 0; i < MAX_ROCKET; ++i) {
+      // Check if we have any free rockets
       if (missile[i] == NULL) {
          index = i;
          break;
       }
    }
    if (index >= 0) {
+      // choose left or right barrel
       if (rocketLeft) {
          xPos *= -1;
       }
-      rocketLeft = !rocketLeft;
+      rocketLeft = !rocketLeft; // next barrel is opposite
       missile[index] = new Rocket(280-viewAngle[0], -1*viewAngle[1], xPos, -1);
    }
 }
@@ -120,7 +137,10 @@ void display(void) {
    float mx, my, mz;
    float ex, ey, ez;
    float dist;
+
+   // check if any rockets hit any planes
    for (int i = 0; i < MAX_ROCKET; ++i) {
+      // only check if missile has been fired
       if (missile[i]) {
          mx = missile[i]->posX();
          my = missile[i]->posY();
@@ -128,26 +148,33 @@ void display(void) {
       } else {
          continue;
       }
+
+      // O(n^2), could be optimized
       for (int j = 0; j < MAX_ENEMY; ++j) {
          if (missile[i] && enemy[j]) {
             ex = enemy[j]->posX();
             ey = enemy[j]->posY();
             ez = enemy[j]->posZ();
+            // dist between plane and rocket
             dist = sqrt( (mx-ex)*(mx-ex) + 
                          (my-ey)*(my-ey) + 
                          (mz-ez)*(mz-ez) );
             if (dist < 10) {
+               // if it's close, count it a hit
                enemy[j]->explode();
                delete missile[i];
                missile[i] = NULL;
             }
             if (enemy[j]->isDead()) {
+               // free memory from dead planes
                delete enemy[j];
                enemy[j] = NULL;
             }
          }
       }
    }
+
+   // check if all enemies are dead
    int c = 0;
    for (int i = 0; i < MAX_ENEMY; ++i) {
       if (enemy[i]) ++c;
@@ -167,6 +194,9 @@ void display(void) {
 
    glTranslatef(0, -2, 0);
 
+   /*****************
+    * Begin barrels *
+    *****************/
    glPushMatrix();
       glColor3f(0.1, 0.1, 0.1);
 
@@ -185,14 +215,20 @@ void display(void) {
       glPopMatrix();
 
    glPopMatrix();
+   /*****************
+    * End barrels *
+    *****************/
 
+   // Rotate camera
    glRotatef(viewAngle[0], 1.0, 0.0, 0.0);
    glRotatef(viewAngle[1], 0.0, 1.0, 0.0);
 
    glPushMatrix();
-      /*****************************
-       * Put your stuff after this *
-       *****************************/
+      /***************
+       * Begin scene *
+       ***************/
+
+      // draw all buildings
       for (int i = 0; i < MAX_BUILDING; ++i) {
          glPushMatrix();
             glColor3f(0.1, 0.1, 0.1);
@@ -202,6 +238,7 @@ void display(void) {
          glPopMatrix();
       }
 
+      // draw the green landscape
       glPushMatrix();
          glColor3f(0.1, 0.3, 0.05);
          glTranslatef(0, -1, 0);
@@ -209,11 +246,13 @@ void display(void) {
          landscape.draw();
       glPopMatrix();
 
-
-      glColor3f(0.5, 0.3, 0.05);
+      // draw all fired missiles
+      glColor3f(0.3, 0.05, 0.05);
       for (int i = 0; i < MAX_ROCKET; ++i) {
          if (missile[i]) {
             missile[i]->draw();
+            cout << missile[i]->getSpeed() << endl;
+            // once it is too far gone, delete it
             if (missile[i]->getDist() > 1000) {
                delete missile[i];
                missile[i] = NULL;
@@ -221,6 +260,7 @@ void display(void) {
          }
       }
 
+      // draw all living planes
       for (int i = 0; i < MAX_ENEMY; ++i) {
          if (enemy[i]) {
             glColor3f(0.1, 0.1, 0.4);
@@ -228,18 +268,15 @@ void display(void) {
          }
       }
 
-      /******************************
-       * Put your stuff before this *
-       ******************************/
+      /*************
+       * End scene *
+       *************/
    glPopMatrix();
 
    glutSwapBuffers();
 
-   // don't exceed the max frame rate
-   // and sleep if needed
-   int timePast = time(NULL) - sTime;
-   if (timePast < SPEED)
-      usleep(SPEED - timePast);
+   // sleep every iteration
+   usleep(SPEED);
 
    glPopMatrix();
 }
@@ -249,27 +286,39 @@ void display(void) {
  * functions here.
  *********************************/
 void processKeys(void) {
+   // rotate up
    if (specKeys[101])
       viewAngle[0] -= MOVE_SPEED;
 
+   // rotate down
    if (specKeys[103])
       viewAngle[0] += MOVE_SPEED;
 
+   // rotate left
    if (specKeys[100])
       viewAngle[1] -= 3*MOVE_SPEED;
 
+   // rotate right
    if (specKeys[102])
       viewAngle[1] += 3*MOVE_SPEED;
 
+   // rotate to origin
    if (keys[(int)'r']) {
       viewAngle[0] = 0;
       viewAngle[1] = 0;
       viewAngle[2] = 0;
    }
 
+   // exit
    if (keys[27])
       exit(0);
 
+   // shoot a rocket
+   if (keys[(int)' ']) {
+      // remove the next line if you want full auto
+      keys[(int)' '] = false;
+      fire();
+   }
 }
 
 void reshape(int w, int h) {
@@ -284,10 +333,6 @@ void keyboard(unsigned char key, int x, int y) {
    x = 0;
    y = 0;
    keys[(int)key] = true;
-
-   if (key == (int)' ') {
-      fire();
-   }
 }
 
 void keyboardUp(unsigned char key, int x, int y) {
