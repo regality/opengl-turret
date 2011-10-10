@@ -1,0 +1,17 @@
+OPENGL TURRET
+=============
+
+This is mostly just a fun little hack.
+Feel free to do with it as you please.
+
+RUNNING
+=======
+
+To get it running, clone the git repository:
+
+   bash> git clone git://github.com/regality/opengl-turret.git turret
+
+Then just build it and shoot:
+
+   bash> cd turret
+   bash> make run
