@@ -15,3 +15,12 @@ Then just build it and shoot:
 
    bash> cd turret
    bash> make run
+
+PLAYING
+=======
+
+Space bar shoots.
+
+Use arrow keys to look around.
+
+Shoot all the planes as fast as you can.

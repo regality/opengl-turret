@@ -2,7 +2,7 @@
 CC = g++
 CCFLAGS = -O3 
 GL_FLAGS = -lGL -lglut -lGLU
-EXECNAME = scene
+EXECNAME = turret
 HFILES = $(wildcard objects/*.h)
 SRCS = $(wildcard objects/*.cpp)
 OBJS = $(patsubst objects/%,objects/obj/%,$(patsubst %.cpp,%.o,$(SRCS)))
