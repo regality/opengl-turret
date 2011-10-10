@@ -27,6 +27,7 @@ bool specKeys[256];
 bool rocketLeft = true; // use left barrel
 int gameBegin; // use to time game
 int gameEnd;
+int level = 1;
 
 // This should prolly be moved to objects directory
 struct Building {
@@ -58,7 +59,7 @@ void createBadGuys() {
       int z = rand() % 500;
       if (rand() % 2) x *= -1;
       if (rand() % 2) z *= -1;
-      enemy[i] = new Plane(x, y, z);
+      enemy[i] = new Plane(x, y, z, level);
    }
    gameBegin = time(0);
 }
@@ -165,11 +166,6 @@ void display(void) {
                delete missile[i];
                missile[i] = NULL;
             }
-            if (enemy[j]->isDead()) {
-               // free memory from dead planes
-               delete enemy[j];
-               enemy[j] = NULL;
-            }
          }
       }
    }
@@ -177,11 +173,19 @@ void display(void) {
    // check if all enemies are dead
    int c = 0;
    for (int i = 0; i < MAX_ENEMY; ++i) {
-      if (enemy[i]) ++c;
+      if (enemy[i] && enemy[i]->isDead()) {
+         // free memory from dead planes
+         delete enemy[i];
+         enemy[i] = NULL;
+      }
+      if (enemy[i]) {
+         ++c;
+      }
    }
    if (c == 0) {
       gameEnd = time(0);
       cout << "ALL BAD GUYS KILLED.\nSCORE: " << 200 - (gameEnd - gameBegin) << endl;
+      ++level;
       createBadGuys();
    }
 
@@ -251,7 +255,6 @@ void display(void) {
       for (int i = 0; i < MAX_ROCKET; ++i) {
          if (missile[i]) {
             missile[i]->draw();
-            cout << missile[i]->getSpeed() << endl;
             // once it is too far gone, delete it
             if (missile[i]->getDist() > 1000) {
                delete missile[i];
@@ -315,8 +318,9 @@ void processKeys(void) {
 
    // shoot a rocket
    if (keys[(int)' ']) {
-      // remove the next line if you want full auto
-      keys[(int)' '] = false;
+      if (level > 7) {
+         keys[(int)' '] = false;
+      }
       fire();
    }
 }

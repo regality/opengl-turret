@@ -10,12 +10,15 @@ class Plane : public SceneObject {
    private:
       float pos[3];
       float angle[3];
+      float speed;
+      float explodeSize;
+      int lives;
+      bool smoke;
       bool die;
       bool dead;
-      float explodeSize;
 
    public:
-      Plane(float x, float y, float z);
+      Plane(float x, float y, float z, int l);
       void draw();
       void explode();
       float posX();
