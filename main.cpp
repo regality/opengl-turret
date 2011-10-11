@@ -20,7 +20,8 @@ const int MAX_ROCKET = 100; // number of rockets
 const int MAX_BUILDING = 20; // number of buildings
 
 int SPEED = 20000;  // Frame rate, smaller is faster
-const double MOVE_SPEED = 1.0; // camera rotate speed
+const double MOVE_SPEED_X = 0.5; // camera rotate speed
+const double MOVE_SPEED_Y = 2.0; // camera rotate speed
 double viewAngle[3] = { 0.0, 0.0, 0.0 }; // camera angle
 bool keys[256];
 bool specKeys[256];
@@ -28,14 +29,9 @@ bool rocketLeft = true; // use left barrel
 int gameBegin; // use to time game
 int gameEnd;
 int level = 1;
-
-// This should prolly be moved to objects directory
-struct Building {
-   float posx;
-   float posz;
-   float height;
-   float width;
-};
+bool rocketMode = false;
+bool bulletMode = true;
+bool gunMode = rocketMode;
 
 /***********************************
  * Declare your scene objects here *
@@ -59,7 +55,7 @@ void createBadGuys() {
       int z = rand() % 500;
       if (rand() % 2) x *= -1;
       if (rand() % 2) z *= -1;
-      enemy[i] = new Plane(x, y, z, level);
+      enemy[i] = new Plane(x, y, z, level * 10);
    }
    gameBegin = time(0);
 }
@@ -78,13 +74,13 @@ void setup() {
 
    // put buildings in random places
    for (int i = 0; i < MAX_BUILDING; ++i) {
-      building[i] = new Building;
-      building[i]->posx = rand() % 200;
-      building[i]->posz = rand() % 200;
-      building[i]->height = rand() % 7 + 2;
-      building[i]->width = rand() % 7 + 2;
-      if (rand() % 2) building[i]->posx *= -1;
-      if (rand() % 2) building[i]->posz *= -1;
+      float x = rand() % 125;
+      float z = rand() % 200;
+      float height = rand() % 10 + 2;
+      float width = rand() % 7 + 2;
+      if (rand() % 2) x *= -1;
+      if (rand() % 2) z *= -1;
+      building[i] = new Building(x, z, height, width);
    }
 
    // set rocket pointers to null
@@ -123,7 +119,11 @@ void fire() {
          xPos *= -1;
       }
       rocketLeft = !rocketLeft; // next barrel is opposite
-      missile[index] = new Rocket(280-viewAngle[0], -1*viewAngle[1], xPos, -1);
+      missile[index] = new Rocket(280-viewAngle[0],
+                                  -1*viewAngle[1],
+                                  xPos,
+                                  -1,
+                                  gunMode);
    }
 }
 
@@ -162,7 +162,11 @@ void display(void) {
                          (mz-ez)*(mz-ez) );
             if (dist < 10) {
                // if it's close, count it a hit
-               enemy[j]->explode();
+               int delt = 1;
+               if (gunMode == rocketMode) {
+                  delt = 50;
+               }
+               enemy[j]->damage(delt);
                delete missile[i];
                missile[i] = NULL;
             }
@@ -187,6 +191,39 @@ void display(void) {
       cout << "ALL BAD GUYS KILLED.\nSCORE: " << 200 - (gameEnd - gameBegin) << endl;
       ++level;
       createBadGuys();
+   }
+
+   for (int i = 0; i < MAX_ENEMY; ++i) {
+      if (!enemy[i]) {
+         continue;
+      }
+      if (enemy[i]->bombDone()) {
+         for (int j = 0; j < MAX_BUILDING; ++j) {
+            if (building[j]) {
+               float sx = building[j]->posX();
+               float sz = building[j]->posZ();
+               float bx = enemy[i]->bombX();
+               float bz = enemy[i]->bombZ();
+               float dist = sqrt( (sx - bx)*(sx - bx) +
+                                  (sz - bz)*(sz - bz) );
+               if (dist < 30) {
+                  delete building[j];
+                  building[j] = NULL;
+               }
+            }
+         }
+      }
+   }
+
+   c = 0;
+   for (int i = 0; i < MAX_BUILDING; ++i) {
+      if (building[i]) {
+         ++c;
+      }
+   }
+   if (c == 0) {
+      cout << "You lose." << endl;
+      exit(0);
    }
 
    glPushMatrix();
@@ -234,19 +271,16 @@ void display(void) {
 
       // draw all buildings
       for (int i = 0; i < MAX_BUILDING; ++i) {
-         glPushMatrix();
-            glColor3f(0.1, 0.1, 0.1);
-            glTranslatef(building[i]->posx, 0, building[i]->posz);
-            glScalef(building[i]->width, building[i]->height, building[i]->width);
-            box.draw();
-         glPopMatrix();
+         if (building[i]) {
+            building[i]->draw();
+         }
       }
 
       // draw the green landscape
       glPushMatrix();
          glColor3f(0.1, 0.3, 0.05);
          glTranslatef(0, -1, 0);
-         glScalef(100.0,1.0,100.0);
+         glScalef(500.0,1.0,500.0);
          landscape.draw();
       glPopMatrix();
 
@@ -291,19 +325,19 @@ void display(void) {
 void processKeys(void) {
    // rotate up
    if (specKeys[101])
-      viewAngle[0] -= MOVE_SPEED;
+      viewAngle[0] -= MOVE_SPEED_X;
 
    // rotate down
    if (specKeys[103])
-      viewAngle[0] += MOVE_SPEED;
+      viewAngle[0] += MOVE_SPEED_X;
 
    // rotate left
    if (specKeys[100])
-      viewAngle[1] -= 3*MOVE_SPEED;
+      viewAngle[1] -= MOVE_SPEED_Y;
 
    // rotate right
    if (specKeys[102])
-      viewAngle[1] += 3*MOVE_SPEED;
+      viewAngle[1] += MOVE_SPEED_Y;
 
    // rotate to origin
    if (keys[(int)'r']) {
@@ -316,9 +350,15 @@ void processKeys(void) {
    if (keys[27])
       exit(0);
 
+   // I'm too close, switching to guns.
+   if (keys[(int)'m']) {
+      gunMode = !gunMode;
+      keys[(int)'m'] = false;
+   }
+
    // shoot a rocket
    if (keys[(int)' ']) {
-      if (level > 7) {
+      if (gunMode == rocketMode) {
          keys[(int)' '] = false;
       }
       fire();
@@ -384,7 +424,7 @@ int main(int argc, char** argv) {
    glEnable(GL_LIGHTING);
    glEnable(GL_COLOR_MATERIAL);
 
-   float zero[] = {.7, .7, .7, 1};
+   float zero[] = {.7, .7, .7, 1}; // lol
    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, zero);
    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 

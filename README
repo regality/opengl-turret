@@ -7,12 +7,9 @@ Feel free to do with it as you please.
 RUNNING
 =======
 
-To get it running, clone the git repository:
+To get it running, clone the git repository and build it:
 
    bash> git clone git://github.com/regality/opengl-turret.git turret
-
-Then just build it and shoot:
-
    bash> cd turret
    bash> make run
 
@@ -21,6 +18,24 @@ PLAYING
 
 Space bar shoots.
 
+Pressing m switches between guns and rockets.
+
 Use arrow keys to look around.
 
 Shoot all the planes as fast as you can.
+
+Planes come 10 at a time.
+After shooting down all ten, ten stronger planes come.
+
+GAMEPLAY SPECIFICS
+==================
+
+Guns are fully automatic, but only do 1 damage.
+Rockets are semi-automatic, but do 50 damage.
+
+Each plane has 10 health points multiplied by the level you are at.
+So the planes in the first wave have only 10 health, in the second
+wave each has 20 health, and so on.
+
+Once a plane recieves any damage it slows
+to a crawl and is an easy target.

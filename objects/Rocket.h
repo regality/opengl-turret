@@ -14,9 +14,10 @@ class Rocket : public SceneObject {
       float yPos;
       float dist;
       float speed;
+      bool bullet;
 
    public:
-      Rocket(float xa, float ya, float xp, float yp);
+      Rocket(float xa, float ya, float xp, float yp, bool b);
       void draw();
       float getDist();
       float getSpeed();

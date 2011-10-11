@@ -5,13 +5,19 @@
 #include "Cylinder.h"
 #include "Pyramid.h"
 
-Rocket::Rocket(float xa, float ya, float xp, float yp) {
+Rocket::Rocket(float xa, float ya, float xp, float yp, bool b) {
    xAngle = xa;
    yAngle = ya;
    xPos = xp;
    yPos = yp;
-   dist = 0;
-   speed = 1;
+   bullet = b;
+   if (bullet) {
+      dist = 0;
+      speed = 33;
+   } else {
+      dist = 15;
+      speed = 1;
+   }
 }
 
 void Rocket::draw() {
@@ -30,14 +36,20 @@ void Rocket::draw() {
       glTranslatef(0,dist,0);
       glTranslatef(xPos,yPos,0);
 
-      glPushMatrix();
-         glScalef(0.6,1.3,0.6);
-         glTranslatef(0,7,0);
-         p.draw();
-      glPopMatrix();
+      if (!bullet) {
+         glPushMatrix();
+            glScalef(0.6,1.3,0.6);
+            glTranslatef(0,7,0);
+            p.draw();
+         glPopMatrix();
+      }
 
       glPushMatrix();
-         glScalef(0.49, 7, 0.49);
+         if (bullet) {
+            glScalef(0.1, 3, 0.1);
+         } else {
+            glScalef(0.49, 7, 0.49);
+         }
          c.draw();
       glPopMatrix();
    glPopMatrix();

@@ -4,27 +4,31 @@
 #include <cmath>
 #include <GL/glut.h>
 #include <GL/gl.h>
-#include "SceneObject.h"
+#include "Exploder.h"
+#include "Bomb.h"
 
-class Plane : public SceneObject {
+class Plane : public Exploder {
    private:
       float pos[3];
       float angle[3];
       float speed;
-      float explodeSize;
-      int lives;
+      int health;
       bool smoke;
       bool die;
       bool dead;
+      Bomb * bomb;
 
    public:
-      Plane(float x, float y, float z, int l);
+      Plane(float x, float y, float z, int h);
       void draw();
-      void explode();
+      void damage(int delt);
       float posX();
       float posY();
       float posZ();
       bool isDead();
+      bool bombDone();
+      float bombX();
+      float bombZ();
 };
 
 #endif
