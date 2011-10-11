@@ -15,7 +15,7 @@ void keyboardUp(unsigned char key, int x, int y);
 void specialKey(int key, int x, int y);
 void specialKeyUp(int key, int x, int y);
 
-const int MAX_ENEMY = 20; // number of planes
+const int MAX_ENEMY = 10; // number of planes
 const int MAX_ROCKET = 100; // number of rockets
 const int MAX_BUILDING = 20; // number of buildings
 
